@@ -2,7 +2,7 @@
 
 Prototipe alur swa-diagnosis untuk membantu karyawan non-TI mengetahui apakah gangguan koneksi berasal dari **WiFi** atau dari **kualitas kabel LAN**, sebelum menghubungi helpdesk.
 
-**Coba prototipe:** https://USERNAME.github.io/cekkoneksi/
+**Coba prototipe:** https://trypurwanto19.github.io/cekkoneksi/
 
 > Prototipe ini dibuat untuk keperluan uji pengguna (mata kuliah Design Thinking untuk Keberlanjutan, Magister Manajemen Universitas Mercu Buana). Hasil uji koneksi di dalamnya adalah **simulasi** berdasarkan jawaban pengguna, bukan pengukuran jaringan sebenarnya, dan laporan ke helpdesk tidak benar-benar dikirim.
 
