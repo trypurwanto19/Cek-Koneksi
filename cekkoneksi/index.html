@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CekKoneksi – Prototipe Swa-Diagnosis Jaringan</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#E9EEF2; --surface:#FFFFFF; --ink:#17222D; --muted:#5B6874; --line:#CBD5DE;
+  --cable:#1E5AA8; --cable-soft:#E3ECF8; --ok:#2E7D4F; --ok-soft:#E3F2E9;
+  --warn:#B9770E; --warn-soft:#FBF0DA; --fault:#B63A25; --fault-soft:#F9E4DF;
+  color-scheme: light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F151B; --surface:#18212A; --ink:#E6ECF1; --muted:#9AA7B3; --line:#2E3B47;
+    --cable:#6FA3E8; --cable-soft:#1C2C40; --ok:#6CC495; --ok-soft:#173025;
+    --warn:#E8B04E; --warn-soft:#352914; --fault:#F08A74; --fault-soft:#3A1E18;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F151B; --surface:#18212A; --ink:#E6ECF1; --muted:#9AA7B3; --line:#2E3B47;
+  --cable:#6FA3E8; --cable-soft:#1C2C40; --ok:#6CC495; --ok-soft:#173025;
+  --warn:#E8B04E; --warn-soft:#352914; --fault:#F08A74; --fault-soft:#3A1E18;
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Atkinson Hyperlegible",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;font-size:17px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding:28px 18px 40px;display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:36px;align-items:start}
+.intro h1{font-size:1.9rem;line-height:1.2;margin:0 0 12px}
+.intro p{color:var(--muted);margin:0 0 14px;max-width:46ch}
+.intro .note{border-left:4px solid var(--warn);background:var(--warn-soft);color:var(--ink);padding:10px 14px;border-radius:0 8px 8px 0;font-size:.95rem}
+.steps-legend{list-style:none;padding:0;margin:18px 0 0}
+.steps-legend li{display:flex;gap:10px;align-items:center;padding:6px 0;color:var(--muted)}
+.steps-legend li b{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;border:2px solid var(--line);font-size:.85rem;color:var(--muted)}
+.steps-legend li.now{color:var(--ink)}
+.steps-legend li.now b{border-color:var(--cable);background:var(--cable);color:#fff}
+.steps-legend li.done b{border-color:var(--cable);color:var(--cable)}
+.device{background:var(--surface);border:1px solid var(--line);border-radius:28px;min-height:680px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 18px 40px -24px rgba(23,34,45,.45)}
+.bar{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.plug{width:30px;height:30px;flex:none}
+.bar strong{font-size:1.05rem}
+.bar span{margin-left:auto;font-size:.85rem;color:var(--muted)}
+.progress{height:4px;background:var(--line)}
+.progress i{display:block;height:100%;background:var(--cable);transition:width .35s ease}
+.screen{padding:22px 20px 24px;flex:1;display:flex;flex-direction:column}
+.screen h2{font-size:1.35rem;line-height:1.25;margin:0 0 6px}
+.screen .lead{color:var(--muted);margin:0 0 18px}
+.q{margin:0 0 18px}
+.q > p{font-weight:700;margin:0 0 8px}
+.opts{display:grid;gap:8px}
+.opts.two{grid-template-columns:1fr 1fr}
+.opt{display:flex;align-items:center;gap:10px;width:100%;text-align:left;font:inherit;color:var(--ink);background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer}
+.opt:hover{border-color:var(--cable)}
+.opt[aria-pressed="true"]{border-color:var(--cable);background:var(--cable-soft)}
+.opt svg{flex:none}
+.opt small{display:block;color:var(--muted);font-size:.85rem}
+button:focus-visible,summary:focus-visible{outline:3px solid var(--cable);outline-offset:2px}
+.primary{margin-top:auto;font:inherit;font-weight:700;border:0;border-radius:12px;padding:15px;background:var(--cable);color:#fff;cursor:pointer;width:100%}
+.primary:disabled{opacity:.4;cursor:not-allowed}
+.ghost{font:inherit;background:none;border:0;color:var(--cable);cursor:pointer;padding:10px 0 0;width:100%}
+details{background:var(--cable-soft);border-radius:10px;padding:10px 14px;margin:-4px 0 18px;font-size:.95rem}
+details summary{cursor:pointer;font-weight:700;color:var(--cable)}
+details ol{margin:8px 0 0;padding-left:20px}
+.rj{display:flex;gap:12px;margin-bottom:10px}
+.rj figure{margin:0;flex:1;text-align:center;font-size:.85rem;color:var(--muted)}
+.rj svg{width:100%;height:auto;max-height:90px}
+.meter{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:16px 0}
+.cell{border:1px solid var(--line);border-radius:12px;padding:12px}
+.cell small{display:block;color:var(--muted);font-size:.82rem}
+.cell b{font-size:1.4rem}
+.cell.bad b{color:var(--fault)} .cell.mid b{color:var(--warn)} .cell.good b{color:var(--ok)}
+.sim{font-size:.82rem;color:var(--muted);margin:0 0 12px}
+.verdict{border-radius:14px;padding:16px;margin-bottom:16px}
+.verdict.fault{background:var(--fault-soft)} .verdict.warn{background:var(--warn-soft)} .verdict.ok{background:var(--ok-soft)}
+.verdict p{margin:0}
+.verdict .tag{font-size:.85rem;color:var(--muted)}
+.verdict h3{margin:2px 0 6px;font-size:1.25rem}
+.advice{margin:0 0 18px;padding-left:22px}
+.advice li{margin-bottom:6px}
+.ticket{border:1px dashed var(--line);border-radius:12px;padding:14px;font-size:.95rem;margin-bottom:16px}
+.ticket dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0 0}
+.ticket dt{color:var(--muted)}
+.ticket dd{margin:0}
+.scan{height:6px;border-radius:3px;background:var(--line);overflow:hidden;margin:16px 0 6px}
+.scan i{display:block;height:100%;width:0;background:var(--cable)}
+@media (max-width:820px){
+  .wrap{grid-template-columns:1fr;gap:20px;padding-top:18px}
+  .intro .steps-legend{display:none}
+  .device{min-height:0;border-radius:20px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <section class="intro">
+    <h1>CekKoneksi: cari tahu dulu, WiFi atau kabel?</h1>
+    <p>Prototipe alur swa-diagnosis untuk karyawan non-TI. Pengguna memeriksa koneksinya dalam empat langkah, mendapat dugaan penyebab dan saran, lalu dapat melapor ke helpdesk dengan data yang sudah terlampir.</p>
+    <p class="note">Ini prototipe untuk uji pengguna. Hasil uji koneksi di Langkah 3 adalah simulasi berdasarkan jawaban Anda, bukan pengukuran jaringan yang sebenarnya.</p>
+    <ol class="steps-legend" id="legend">
+      <li><b>1</b>Pilih koneksi dan gejala</li>
+      <li><b>2</b>Cek fisik kabel atau sinyal WiFi</li>
+      <li><b>3</b>Uji koneksi</li>
+      <li><b>4</b>Hasil dan saran</li>
+    </ol>
+  </section>
+
+  <main class="device" aria-live="polite">
+    <div class="bar">
+      <svg class="plug" viewBox="0 0 32 32" aria-hidden="true"><rect x="7" y="4" width="18" height="16" rx="2" fill="none" stroke="var(--cable)" stroke-width="2.5"/><rect x="12" y="20" width="8" height="5" fill="var(--cable)"/><path d="M16 25v5" stroke="var(--cable)" stroke-width="2.5"/><path d="M11 9v5M14 9v5M18 9v5M21 9v5" stroke="var(--cable)" stroke-width="1.6"/></svg>
+      <strong>CekKoneksi</strong>
+      <span id="stepLabel">Langkah 1 dari 4</span>
+    </div>
+    <div class="progress"><i id="prog" style="width:25%"></i></div>
+    <div class="screen" id="screen"></div>
+  </main>
+</div>
+
+<script>
+const S = {conn:null, symptom:null, link:null, led:null, plug:null, bars:null, place:null, busy:null, test:null};
+const screen = document.getElementById('screen');
+let step = 1;
+
+const icon = {
+  wifi:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--cable)" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 8.5a15 15 0 0 1 20 0"/><path d="M5.5 12a10 10 0 0 1 13 0"/><path d="M9 15.5a5 5 0 0 1 6 0"/><circle cx="12" cy="19" r="1.2" fill="var(--cable)"/></svg>',
+  lan:'<svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--cable)" stroke-width="2" aria-hidden="true"><rect x="5" y="3" width="14" height="11" rx="1.5"/><path d="M9 14v3h6v-3M12 17v4"/><path d="M8.5 6.5v3M11 6.5v3M13 6.5v3M15.5 6.5v3" stroke-width="1.3"/></svg>'
+};
+
+function opt(key, val, label, sub, ico){
+  const on = S[key]===val;
+  return `<button class="opt" aria-pressed="${on}" data-k="${key}" data-v="${val}">${ico||''}<span>${label}${sub?`<small>${sub}</small>`:''}</span></button>`;
+}
+function setLegend(){
+  document.querySelectorAll('#legend li').forEach((li,i)=>{
+    li.className = i+1<step ? 'done' : (i+1===step ? 'now' : '');
+  });
+  document.getElementById('stepLabel').textContent = step<=4 ? `Langkah ${step} dari 4` : 'Laporan terkirim';
+  document.getElementById('prog').style.width = Math.min(step,4)*25+'%';
+}
+function bind(onChange){
+  screen.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{
+    S[b.dataset.k]=b.dataset.v; onChange();
+  }));
+}
+
+function s1(){
+  step=1; setLegend();
+  screen.innerHTML = `
+    <h2>Koneksi Anda bermasalah?</h2>
+    <p class="lead">Jawab dua pertanyaan singkat ini.</p>
+    <div class="q"><p>Laptop atau PC Anda tersambung lewat apa?</p>
+      <div class="opts">${opt('conn','wifi','WiFi','Tanpa kabel ke dinding atau meja',icon.wifi)}${opt('conn','lan','Kabel LAN','Ada kabel jaringan tercolok ke laptop/PC',icon.lan)}</div>
+    </div>
+    <div class="q"><p>Apa yang Anda rasakan?</p>
+      <div class="opts">${opt('symptom','lambat','Lambat')}${opt('symptom','putus','Sering putus-sambung')}${opt('symptom','mati','Tidak tersambung sama sekali')}</div>
+    </div>
+    <button class="primary" id="next" ${S.conn&&S.symptom?'':'disabled'}>Lanjut ke pemeriksaan</button>`;
+  bind(s1);
+  document.getElementById('next').onclick = s2;
+}
+
+function s2(){
+  step=2; setLegend();
+  if(S.conn==='lan'){
+    const ready = S.link&&S.led&&S.plug;
+    screen.innerHTML = `
+      <h2>Periksa kabel Anda</h2>
+      <p class="lead">Tiga pemeriksaan ini biasanya cukup untuk menemukan kabel yang bermasalah.</p>
+      <div class="q"><p>Berapa kecepatan link di pengaturan adapter?</p>
+        <div class="opts two">${opt('link','1000','1 Gbps')}${opt('link','100','100 Mbps')}${opt('link','10','10 Mbps')}${opt('link','na','Tidak tahu')}</div>
+      </div>
+      <details><summary>Cara melihat kecepatan link</summary>
+        <ol><li>Windows: klik ikon jaringan, pilih <b>Pengaturan jaringan &amp; internet</b>, lalu <b>Ethernet</b>.</li>
+        <li>Lihat baris <b>Kecepatan link</b> (Link speed).</li>
+        <li>Mac: tahan Option, klik ikon WiFi/jaringan, lihat bagian Ethernet.</li></ol>
+      </details>
+      <div class="q"><p>Apakah lampu di port kabel (laptop atau dinding) menyala/berkedip?</p>
+        <div class="opts two">${opt('led','ya','Ya')}${opt('led','tidak','Tidak')}</div>
+      </div>
+      <div class="q"><p>Bagaimana kondisi ujung kabel (konektor)?</p>
+        <div class="rj">
+          <figure>${rj(true)}<figcaption>Baik: klip utuh, terkunci</figcaption></figure>
+          <figure>${rj(false)}<figcaption>Rusak: klip patah, mudah lepas</figcaption></figure>
+        </div>
+        <div class="opts two">${opt('plug','baik','Terlihat baik')}${opt('plug','rusak','Longgar/klip patah')}</div>
+      </div>
+      <button class="primary" id="next" ${ready?'':'disabled'}>Lanjut ke uji koneksi</button>
+      <button class="ghost" id="back">Kembali</button>`;
+  } else {
+    const ready = S.bars&&S.place&&S.busy;
+    screen.innerHTML = `
+      <h2>Periksa sinyal WiFi</h2>
+      <p class="lead">Lihat ikon WiFi di pojok layar Anda.</p>
+      <div class="q"><p>Berapa bar sinyal yang terlihat?</p>
+        <div class="opts two">${opt('bars','1','1 bar')}${opt('bars','2','2 bar')}${opt('bars','3','3 bar')}${opt('bars','4','Penuh')}</div>
+      </div>
+      <div class="q"><p>Di mana posisi Anda?</p>
+        <div class="opts">${opt('place','dekat','Satu ruangan dengan access point')}${opt('place','jauh','Terhalang dinding atau jauh dari access point')}</div>
+      </div>
+      <div class="q"><p>Kapan gangguan paling terasa?</p>
+        <div class="opts">${opt('busy','sibuk','Saat jam sibuk atau ruangan ramai')}${opt('busy','selalu','Hampir sepanjang waktu')}</div>
+      </div>
+      <button class="primary" id="next" ${ready?'':'disabled'}>Lanjut ke uji koneksi</button>
+      <button class="ghost" id="back">Kembali</button>`;
+  }
+  bind(s2);
+  document.getElementById('next').onclick = s3;
+  document.getElementById('back').onclick = s1;
+}
+
+function rj(good){
+  return `<svg viewBox="0 0 120 80" aria-hidden="true">
+    <rect x="4" y="30" width="34" height="20" rx="3" fill="var(--cable)"/>
+    <rect x="38" y="18" width="62" height="44" rx="4" fill="none" stroke="var(--ink)" stroke-width="3"/>
+    ${[0,1,2,3,4,5,6,7].map(i=>`<rect x="${90}" y="${22+i*4.8}" width="8" height="2.6" fill="var(--warn)"/>`).join('')}
+    ${good
+      ? '<path d="M52 18 L52 8 L92 8" fill="none" stroke="var(--ok)" stroke-width="4" stroke-linecap="round"/>'
+      : '<path d="M52 18 L52 10 L66 10" fill="none" stroke="var(--fault)" stroke-width="4" stroke-linecap="round"/><path d="M74 6 l6 6 M80 6 l-6 6" stroke="var(--fault)" stroke-width="3" stroke-linecap="round"/>'}
+  </svg>`;
+}
+
+function simulate(){
+  let ping=4, loss=0, down=90, up=85;
+  if(S.conn==='lan'){
+    if(S.led==='tidak') return {ping:null,loss:100,down:0,up:0};
+    if(S.link==='100'){down=92;up=88;}
+    if(S.link==='10'){down=9;up=9;}
+    if(S.link==='1000'||S.link==='na'){down=420;up=380;}
+    if(S.plug==='rusak'||S.symptom==='putus'){loss=6;ping=38;}
+  } else {
+    const b=+S.bars;
+    ping = [0,85,40,12,6][b]; loss=[0,9,4,1,0][b];
+    down=[0,6,22,60,110][b]; up=[0,3,12,40,70][b];
+    if(S.busy==='sibuk' && b>=3){down=Math.round(down/4);ping+=30;loss+=2;}
+  }
+  return {ping,loss,down,up};
+}
+
+function s3(){
+  step=3; setLegend();
+  screen.innerHTML = `
+    <h2>Uji koneksi</h2>
+    <p class="lead">Aplikasi akan mengukur waktu respons, paket yang hilang, dan kecepatan.</p>
+    <button class="primary" id="run" style="margin-top:0">Mulai uji</button>
+    <div id="out"></div>
+    <button class="ghost" id="back">Kembali</button>`;
+  document.getElementById('back').onclick = s2;
+  document.getElementById('run').onclick = ()=>{
+    const out = document.getElementById('out');
+    document.getElementById('run').disabled = true;
+    out.innerHTML = `<div class="scan"><i id="scan"></i></div><p class="sim">Menguji koneksi...</p>`;
+    requestAnimationFrame(()=>{const sc=document.getElementById('scan'); sc.style.transition='width 1.6s linear'; sc.style.width='100%';});
+    setTimeout(()=>{
+      const r = S.test = simulate();
+      const cls=(v,good,mid,lower)=> lower ? (v<=good?'good':v<=mid?'mid':'bad') : (v>=good?'good':v>=mid?'mid':'bad');
+      out.innerHTML = `
+        <div class="meter">
+          <div class="cell ${r.ping===null?'bad':cls(r.ping,20,60,true)}"><small>Waktu respons (ping)</small><b>${r.ping===null?'—':r.ping+' ms'}</b></div>
+          <div class="cell ${cls(r.loss,0,2,true)}"><small>Paket hilang</small><b>${r.loss}%</b></div>
+          <div class="cell ${cls(r.down,50,20)}"><small>Unduh</small><b>${r.down} Mbps</b></div>
+          <div class="cell ${cls(r.up,50,20)}"><small>Unggah</small><b>${r.up} Mbps</b></div>
+        </div>
+        <p class="sim">Angka simulasi untuk keperluan uji prototipe.</p>
+        <button class="primary" id="next">Lihat hasil</button>`;
+      document.getElementById('next').onclick = s4;
+    }, 1700);
+  };
+}
+
+function diagnose(){
+  if(S.conn==='lan'){
+    if(S.led==='tidak') return {lvl:'fault',cause:'Kabel lepas atau putus',why:'Lampu port mati dan tidak ada koneksi sama sekali.',adv:['Cabut lalu colokkan kembali kabel sampai terdengar bunyi klik.','Coba colokkan ke port dinding atau meja yang lain.','Jika tetap mati, ganti patch cord (kabel pendek di meja).']};
+    if(S.plug==='rusak') return {lvl:'fault',cause:'Konektor kabel rusak',why:'Klip konektor patah membuat kabel mudah bergeser, sehingga koneksi putus-sambung.',adv:['Ganti patch cord dengan kabel Cat6 yang konektornya utuh.','Uji ulang setelah kabel diganti.']};
+    if(S.link==='100'||S.link==='10') return {lvl:'fault',cause:'Kualitas kabel menurun',why:`Link hanya ${S.link} Mbps, padahal port umumnya mendukung 1 Gbps. Ini biasanya tanda ada kawat di dalam kabel yang putus atau kabel kategori lama.`,adv:['Ganti patch cord dengan kabel Cat6, lalu periksa kecepatan link lagi.','Jika setelah diganti masih 100 Mbps, masalah ada di kabel dinding atau port. Kirim laporan agar teknisi menguji dengan cable tester.']};
+    if(S.symptom==='putus') return {lvl:'warn',cause:'Kabel kemungkinan terjepit atau tertekuk',why:'Kecepatan link normal, tetapi ada paket yang hilang.',adv:['Periksa apakah kabel terlindas kursi atau tertekuk tajam.','Ganti patch cord bila ada bagian kabel yang penyok.']};
+    return {lvl:'ok',cause:'Kabel dalam kondisi baik',why:'Kecepatan link dan hasil uji normal. Gangguan kemungkinan berasal dari aplikasi atau layanan yang diakses.',adv:['Coba buka situs atau aplikasi lain untuk membandingkan.','Jika hanya satu aplikasi yang lambat, laporkan ke helpdesk.']};
+  }
+  const b=+S.bars;
+  if(b<=2) return {lvl:'warn',cause:'Sinyal WiFi lemah',why:S.place==='jauh'?'Posisi Anda terhalang dinding atau jauh dari access point.':'Sinyal hanya '+b+' bar walaupun dekat dengan access point.',adv:['Pindah lebih dekat ke access point, atau ke ruangan tanpa penghalang.','Untuk rapat daring penting, gunakan kabel LAN bila tersedia.',S.place==='dekat'?'Karena Anda sudah dekat access point, kirim laporan ke helpdesk.':'Jika banyak rekan mengalami hal sama di area ini, kirim laporan ke helpdesk.']};
+  if(S.busy==='sibuk') return {lvl:'warn',cause:'Access point terlalu padat',why:'Sinyal kuat, tetapi kecepatan turun saat banyak pengguna.',adv:['Gunakan kabel LAN untuk pekerjaan berat saat jam sibuk.','Kirim laporan agar helpdesk menilai kapasitas access point di area ini.']};
+  return {lvl:'ok',cause:'WiFi dalam kondisi baik',why:'Sinyal dan hasil uji normal.',adv:['Coba putuskan lalu sambungkan kembali WiFi.','Jika masih bermasalah, kirim laporan ke helpdesk.']};
+}
+
+function s4(){
+  step=4; setLegend();
+  const d = diagnose(); S.dx=d;
+  screen.innerHTML = `
+    <h2>Hasil pemeriksaan</h2>
+    <div class="verdict ${d.lvl}">
+      <p class="tag">Kemungkinan penyebab</p>
+      <h3>${d.cause}</h3>
+      <p>${d.why}</p>
+    </div>
+    <p style="font-weight:700;margin:0 0 6px">Yang bisa Anda lakukan</p>
+    <ol class="advice">${d.adv.map(a=>`<li>${a}</li>`).join('')}</ol>
+    <button class="primary" id="send">Kirim laporan ke helpdesk</button>
+    <button class="ghost" id="again">Masalah selesai, periksa ulang dari awal</button>`;
+  document.getElementById('send').onclick = s5;
+  document.getElementById('again').onclick = reset;
+}
+
+function s5(){
+  step=5; setLegend();
+  const r=S.test||{}, lan=S.conn==='lan';
+  const no = 'CK-'+String(Math.floor(Math.random()*9000)+1000);
+  screen.innerHTML = `
+    <h2>Laporan terkirim</h2>
+    <p class="lead">Helpdesk menerima ringkasan di bawah ini, jadi Anda tidak perlu menjelaskan ulang.</p>
+    <div class="ticket"><b>Tiket ${no}</b>
+      <dl>
+        <dt>Koneksi</dt><dd>${lan?'Kabel LAN':'WiFi'}</dd>
+        <dt>Gejala</dt><dd>${{lambat:'Lambat',putus:'Putus-sambung',mati:'Tidak tersambung'}[S.symptom]}</dd>
+        ${lan?`<dt>Link</dt><dd>${S.link==='na'?'Tidak diketahui':S.link==='1000'?'1 Gbps':S.link+' Mbps'}</dd><dt>Lampu port</dt><dd>${S.led==='ya'?'Menyala':'Mati'}</dd><dt>Konektor</dt><dd>${S.plug==='baik'?'Baik':'Longgar/klip patah'}</dd>`
+             :`<dt>Sinyal</dt><dd>${S.bars==='4'?'Penuh':S.bars+' bar'}</dd><dt>Posisi</dt><dd>${S.place==='dekat'?'Dekat access point':'Terhalang/jauh'}</dd>`}
+        <dt>Uji</dt><dd>ping ${r.ping??'—'} ms, hilang ${r.loss}%, unduh ${r.down} Mbps</dd>
+        <dt>Dugaan</dt><dd>${S.dx.cause}</dd>
+      </dl>
+    </div>
+    <p class="sim">Prototipe: laporan tidak benar-benar dikirim.</p>
+    <button class="primary" id="again">Selesai, mulai ulang</button>`;
+  document.getElementById('again').onclick = reset;
+}
+
+function reset(){ Object.keys(S).forEach(k=>S[k]=null); s1(); }
+s1();
+</script>
+</body>
+</html>
